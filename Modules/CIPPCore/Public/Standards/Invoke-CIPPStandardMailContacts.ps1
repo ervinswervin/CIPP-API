@@ -44,12 +44,10 @@ function Invoke-CIPPStandardMailContacts {
         return
     }
     $contacts = $settings
-    $TechAndSecurityContacts = @($Contacts.SecurityContact, $Contacts.TechContact)
-
-    $state = $CurrentInfo.marketingNotificationEmails -eq $Contacts.MarketingContact -and `
-    ($CurrentInfo.securityComplianceNotificationMails -in $TechAndSecurityContacts -or
-        $CurrentInfo.technicalNotificationMails -in $TechAndSecurityContacts) -and `
-        $CurrentInfo.privacyProfile.contactEmail -eq $Contacts.GeneralContact
+    $state = $CurrentInfo.marketingNotificationEmails -contains $Contacts.MarketingContact -and
+    $CurrentInfo.securityComplianceNotificationMails -contains $Contacts.SecurityContact -and
+    $CurrentInfo.technicalNotificationMails -contains $Contacts.TechContact -and
+    $CurrentInfo.privacyProfile.contactEmail -eq $Contacts.GeneralContact
 
     if ($Settings.remediate -eq $true) {
         if ($state) {
@@ -113,8 +111,8 @@ function Invoke-CIPPStandardMailContacts {
         }
         $ExpectedValue = @{
             marketingNotificationEmails         = @($Contacts.MarketingContact)
-            securityComplianceNotificationMails = @($Contacts.SecurityContact) | Where-Object { $_ -ne $null }
-            technicalNotificationMails          = @($Contacts.TechContact) | Where-Object { $_ -ne $null }
+            securityComplianceNotificationMails = @($Contacts.SecurityContact)
+            technicalNotificationMails          = @($Contacts.TechContact)
             contactEmail                        = $Contacts.GeneralContact
         }
         Set-CIPPStandardsCompareField -FieldName 'standards.MailContacts' -CurrentValue $CurrentValue -ExpectedValue $ExpectedValue -Tenant $tenant
