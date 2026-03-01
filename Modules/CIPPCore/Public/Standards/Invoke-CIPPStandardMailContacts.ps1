@@ -59,7 +59,7 @@ function Invoke-CIPPStandardMailContacts {
                 $Body = [pscustomobject]@{}
                 switch ($Contacts) {
                     { $Contacts.MarketingContact } { $body | Add-Member -NotePropertyName marketingNotificationEmails -NotePropertyValue @($Contacts.MarketingContact) }
-                    { $Contacts.SecurityContact } { $body | Add-Member -NotePropertyName technicalNotificationMails -NotePropertyValue @($Contacts.SecurityContact) }
+                    { $Contacts.SecurityContact } { $body | Add-Member -NotePropertyName securityComplianceNotificationMails -NotePropertyValue @($Contacts.SecurityContact) }
                     { $Contacts.TechContact } { $body | Add-Member -NotePropertyName technicalNotificationMails -NotePropertyValue @($Contacts.TechContact) -ErrorAction SilentlyContinue }
                     { $Contacts.GeneralContact } { $body | Add-Member -NotePropertyName privacyProfile -NotePropertyValue @{contactEmail = $Contacts.GeneralContact } }
                 }
@@ -81,10 +81,10 @@ function Invoke-CIPPStandardMailContacts {
             Write-StandardsAlert -message "Marketing contact email is not set to $($Contacts.MarketingContact)" -object $Object -tenant $tenant -standardName 'MailContacts' -standardId $Settings.standardId
             Write-LogMessage -API 'Standards' -tenant $tenant -message "Marketing contact email is not set to $($Contacts.MarketingContact)" -sev Info
         }
-        if (!$Contacts.SecurityContact -or $CurrentInfo.technicalNotificationMails -contains $Contacts.SecurityContact) {
+        if (!$Contacts.SecurityContact -or $CurrentInfo.securityComplianceNotificationMails -contains $Contacts.SecurityContact) {
             Write-LogMessage -API 'Standards' -tenant $tenant -message "Security contact email is set to $($Contacts.SecurityContact)" -sev Info
         } else {
-            $Object = $CurrentInfo | Select-Object technicalNotificationMails
+            $Object = $CurrentInfo | Select-Object securityComplianceNotificationMails
             Write-StandardsAlert -message "Security contact email is not set to $($Contacts.SecurityContact)" -object $Object -tenant $tenant -standardName 'MailContacts' -standardId $Settings.standardId
             Write-LogMessage -API 'Standards' -tenant $tenant -message "Security contact email is not set to $($Contacts.SecurityContact)" -sev Info
         }
@@ -105,15 +105,17 @@ function Invoke-CIPPStandardMailContacts {
 
     }
     if ($Settings.report -eq $true) {
-        $CurrentValue = @{
-            marketingNotificationEmails = @($CurrentInfo.marketingNotificationEmails)
-            technicalNotificationMails  = @($CurrentInfo.technicalNotificationMails)
-            contactEmail                = $CurrentInfo.privacyProfile.contactEmail
+                $CurrentValue = @{
+            marketingNotificationEmails         = @($CurrentInfo.marketingNotificationEmails)
+            securityComplianceNotificationMails = @($CurrentInfo.securityComplianceNotificationMails)
+            technicalNotificationMails          = @($CurrentInfo.technicalNotificationMails)
+            contactEmail                        = $CurrentInfo.privacyProfile.contactEmail
         }
         $ExpectedValue = @{
-            marketingNotificationEmails = @($Contacts.MarketingContact)
-            technicalNotificationMails  = @($Contacts.SecurityContact, $Contacts.TechContact) | Where-Object { $_ -ne $null }
-            contactEmail                = $Contacts.GeneralContact
+            marketingNotificationEmails         = @($Contacts.MarketingContact)
+            securityComplianceNotificationMails = @($Contacts.SecurityContact) | Where-Object { $_ -ne $null }
+            technicalNotificationMails          = @($Contacts.TechContact) | Where-Object { $_ -ne $null }
+            contactEmail                        = $Contacts.GeneralContact
         }
         Set-CIPPStandardsCompareField -FieldName 'standards.MailContacts' -CurrentValue $CurrentValue -ExpectedValue $ExpectedValue -Tenant $tenant
         Add-CIPPBPAField -FieldName 'MailContacts' -FieldValue $CurrentInfo -StoreAs json -Tenant $tenant
